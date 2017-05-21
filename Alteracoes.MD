@@ -1,3 +1,10 @@
+21/05/2017 - AL
+   - retirado dependencia do IdHttp
+   + substituido o TIdHTTP pelo  THTTPClient  (System.net);
+   - retirado alguns metodos do FormFactory substituido por Eventos
+   + adicionado eventos para os forms (Views)
+   + adicionado eventos para o TModuleFactory
+   
 16/05/2017 - AL
    - retirado varios warnnings
    + adicionado suporte a Oracle no OData
