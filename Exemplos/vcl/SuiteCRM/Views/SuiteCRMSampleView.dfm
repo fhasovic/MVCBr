@@ -162,6 +162,7 @@ object SugarCRMSampleView: TSugarCRMSampleView
   end
   object RESTSocialMemTableAdapter1: TRESTSocialMemTableAdapter
     DataSet = FDMemTable1
+    RootElement = 'result'
     Left = 512
     Top = 64
   end

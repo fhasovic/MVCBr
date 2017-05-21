@@ -53,16 +53,10 @@ type
       write SetOnQueryClose;
   end;
 
-procedure register;
 
 implementation
 
 uses MVCBr.Controller;
-
-procedure register;
-begin
-  RegisterComponents('MVCBr', [TVCLPageViewManager]);
-end;
 
 { TVCLPageViewFactory }
 

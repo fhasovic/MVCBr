@@ -143,6 +143,7 @@
         <DCC_LocalDebugSymbols>true</DCC_LocalDebugSymbols>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <DCC_Description>MVCBr FireDAC</DCC_Description>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -156,13 +157,13 @@
         <DCCReference Include="FireDAC.dcp"/>
         <DCCReference Include="FireDACCommonDriver.dcp"/>
         <DCCReference Include="FireDACCommon.dcp"/>
-        <DCCReference Include="MVCBrVCL.dcp"/>
         <DCCReference Include="DbxCommonDriver.dcp"/>
         <DCCReference Include="RESTComponents.dcp"/>
         <DCCReference Include="DataSnapFireDAC.dcp"/>
         <DCCReference Include="MVCBrCore.dcp"/>
+        <DCCReference Include="MVCBrVCL.dcp"/>
         <DCCReference Include="..\VCL\MVCBr.FireDACReg.pas"/>
-        <DCCReference Include="..\VCL\MVCBr.IdHTTPFiredacAdapter.pas"/>
+        <DCCReference Include="..\VCL\MVCBr.HTTPFiredacAdapter.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -185,10 +186,9 @@
                 </Source>
                 <Excluded_Packages>
                     <Excluded_Packages Name="c:\fontes\BPLTokyo\MVCBrFireDAC.bpl">(untitled)</Excluded_Packages>
-                    <Excluded_Packages Name="C:\Fontes\BPLTokyo\QRD_DESIGN.bpl">(untitled)</Excluded_Packages>
+                    <Excluded_Packages Name="c:\fontes\BPLTokyo\WbaComp.bpl">(untitled)</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dcloffice2k250.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclofficexp250.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="c:\fontes\BPLTokyo\WbaComp.bpl">(untitled)</Excluded_Packages>
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="3">

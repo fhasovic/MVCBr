@@ -75,7 +75,7 @@ type
     function ThisAs: TSugarCRMSampleView;
     function ViewAs: ISugarCRMSampleView;
     function ShowView(const AProc: TProc<IView>): integer; override;
-    function Update: IView; override;
+    function UpdateView: IView; override;
   end;
 
 Implementation
@@ -83,7 +83,7 @@ Implementation
 {$R *.DFM}
 uses System.JSON;
 
-function TSugarCRMSampleView.Update: IView;
+function TSugarCRMSampleView.UpdateView: IView;
 begin
   result := self;
   { codigo para atualizar a View vai aqui... }

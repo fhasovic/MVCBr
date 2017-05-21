@@ -1,24 +1,24 @@
-unit MVCBr.IdHTTPFiredacAdapter;
+unit MVCBr.HTTPFiredacAdapter;
 
 interface
 
 uses System.Classes, System.SysUtils,
   System.JSON,
   System.Generics.Collections, Data.DB,
-  MVCBr.IdHTTPRestClient,
+  MVCBr.HTTPRestClient,
   IdHTTP;
 
 type
 
-  TIdHTTPFireDACAdapter = class(TComponent)
+  THTTPFireDACAdapter = class(TComponent)
   private
     FJsonValue: TJsonValue;
     FDataset: TDataset;
-    FResponseJSON: TIdHTTPRestClient;
+    FResponseJSON: THTTPRestClient;
     FRootElement: string;
     procedure SetDataset(const Value: TDataset);
     procedure SetActive(const Value: boolean);
-    procedure SetResponseJSON(const Value: TIdHTTPRestClient);
+    procedure SetResponseJSON(const Value: THTTPRestClient);
     procedure SetRootElement(const Value: string);
     function GetActive: boolean;
     procedure Notification(AComponent: TComponent;
@@ -32,7 +32,7 @@ type
   published
     Property Active: boolean read GetActive write SetActive;
     Property Dataset: TDataset read FDataset write SetDataset;
-    Property ResponseJSON: TIdHTTPRestClient read FResponseJSON
+    Property ResponseJSON: THTTPRestClient read FResponseJSON
       write SetResponseJSON;
     Property RootElement: string read FRootElement write SetRootElement;
   end;
@@ -44,7 +44,7 @@ uses FireDac.Comp.Client, FireDac.Comp.Dataset, Data.FireDACJSONReflect,
 
 { TIdHTTPDataSetAdapter }
 
-procedure TIdHTTPFireDACAdapter.CreateDatasetFromJson(AJson: string);
+procedure THTTPFireDACAdapter.CreateDatasetFromJson(AJson: string);
 begin
   Assert(assigned(FDataset), 'Não atribuiu o Dataset');
   if (AJson <> '') and (AJson <> FResponseJSON.Content) then
@@ -63,7 +63,7 @@ begin
   FillDatasetFromJSONValue(FRootElement, FDataset, FJsonValue, true);
 end;
 
-function TIdHTTPFireDACAdapter.Execute: boolean;
+function THTTPFireDACAdapter.Execute: boolean;
 begin
   if assigned(FJsonValue) then
     FJsonValue.DisposeOf;
@@ -79,7 +79,7 @@ begin
       end);
 end;
 
-class procedure TIdHTTPFireDACAdapter.FillDatasetFromJSONValue
+class procedure THTTPFireDACAdapter.FillDatasetFromJSONValue
   (ARootElement: string; ADataset: TDataset; AJson: TJsonValue;
 AUseReflect: boolean);
 var
@@ -151,13 +151,13 @@ begin
   end;
 end;
 
-function TIdHTTPFireDACAdapter.GetActive: boolean;
+function THTTPFireDACAdapter.GetActive: boolean;
 begin
   if assigned(FDataset) then
     result := FDataset.Active;
 end;
 
-procedure TIdHTTPFireDACAdapter.Notification(AComponent: TComponent;
+procedure THTTPFireDACAdapter.Notification(AComponent: TComponent;
 AOperation: TOperation);
 begin
   if (AOperation = TOperation.opRemove) then
@@ -171,23 +171,23 @@ begin
 
 end;
 
-procedure TIdHTTPFireDACAdapter.SetActive(const Value: boolean);
+procedure THTTPFireDACAdapter.SetActive(const Value: boolean);
 begin
   if assigned(FDataset) then
     FDataset.Active := Value;
 end;
 
-procedure TIdHTTPFireDACAdapter.SetDataset(const Value: TDataset);
+procedure THTTPFireDACAdapter.SetDataset(const Value: TDataset);
 begin
   FDataset := Value;
 end;
 
-procedure TIdHTTPFireDACAdapter.SetResponseJSON(const Value: TIdHTTPRestClient);
+procedure THTTPFireDACAdapter.SetResponseJSON(const Value: THTTPRestClient);
 begin
   FResponseJSON := Value;
 end;
 
-procedure TIdHTTPFireDACAdapter.SetRootElement(const Value: string);
+procedure THTTPFireDACAdapter.SetRootElement(const Value: string);
 begin
   FRootElement := Value;
 end;

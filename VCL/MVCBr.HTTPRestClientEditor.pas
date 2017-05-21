@@ -1,14 +1,14 @@
-unit MVCBr.IdHTTPRestClientReg;
+unit MVCBr.HTTPRestClientEditor;
 
 interface
 
 Uses System.Classes,
-  System.SysUtils, DB, MVCBr.IdHTTPRestClient,
+  System.SysUtils, DB, MVCBr.HTTPRestClient,
   DesignIntf, DesignEditors;
 
 type
 
-  TIDHTTPRestClientCompEditor = class(TComponentEditor)
+  THTTPRestClientCompEditor = class(TComponentEditor)
     function GetVerbCount: integer; override;
     function GetVerb(Index: integer): string; override;
     procedure ExecuteVerb(Index: integer); override;
@@ -22,47 +22,39 @@ type
 
 
 
-procedure Register;
 
 implementation
 
 
-procedure Register;
-begin
-  RegisterComponents('MVCBr', [TIdHTTPRestClient]);
-  RegisterComponentEditor(TIdHTTPRestClient,TIDHTTPRestClientCompEditor);
-
-end;
-
 { TIDHTTPRestClientCompEditor }
 
-constructor TIDHTTPRestClientCompEditor.Create(AComponent: TComponent;
+constructor THTTPRestClientCompEditor.Create(AComponent: TComponent;
   ADesigner: IDesigner);
 begin
   inherited;
 
 end;
 
-procedure TIDHTTPRestClientCompEditor.Edit;
+procedure THTTPRestClientCompEditor.Edit;
 begin
   inherited;
 
 end;
 
 
-procedure TIDHTTPRestClientCompEditor.ExecuteVerb(Index: integer);
+procedure THTTPRestClientCompEditor.ExecuteVerb(Index: integer);
 begin
 //  inherited;
   if assigned(Component) then
-  if Component.InheritsFrom(TIdHTTPRestClient) then
+  if Component.InheritsFrom(THTTPRestClient) then
     case index of
       0:
-        TIdHTTPRestClient(Component).Execute;
+        THTTPRestClient(Component).Execute;
     end;
 
 end;
 
-function TIDHTTPRestClientCompEditor.GetVerb(Index: integer): string;
+function THTTPRestClientCompEditor.GetVerb(Index: integer): string;
 begin
   result := '';
   case index of
@@ -72,7 +64,7 @@ begin
 
 end;
 
-function TIDHTTPRestClientCompEditor.GetVerbCount: integer;
+function THTTPRestClientCompEditor.GetVerbCount: integer;
 begin
    result := 1;
 end;

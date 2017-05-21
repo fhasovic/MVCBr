@@ -273,7 +273,7 @@ Type
 
 Implementation
 
-uses System.RTTI, System.Classes.Helper, idHttp, IdHashMessageDigest;
+uses System.RTTI, System.Classes.Helper, MVCBr.HttpRestClient {idHttp}, IdHashMessageDigest;
 
 function TSuiteCRMModel.Contacts: ISuiteCRMContacts;
 begin
@@ -315,10 +315,10 @@ const
 function TSuiteCRMModel.Post(AResource, ARestData: string): string;
 var
   sl: TStringList;
-  http: TIdHttp;
+  http: THTTPRestClient; //TIdHttp;
   url: string;
 begin
-  http := TIdHttp.Create(nil);
+  http := THTTPRestClient.Create(nil);
   try
     url := GetURL('', '');
     sl := TStringList.Create;
@@ -329,7 +329,11 @@ begin
       sl.Add('rest_data=' + ARestData);
 
       FRequest := sl.text;
-      result := http.Post(url, sl);
+      http.Method := THTTPRestMethod.rmPOST;
+      http.BaseURL := url;
+      http.Body.Assign(sl);
+      http.Execute;
+      result := http.Content ;
       FResponse := result;
     finally
       sl.Free;
@@ -392,10 +396,10 @@ end;
 
 function TSuiteCRMModel.Get(AMethod, ARestData: string): string;
 var
-  http: TIdHttp;
+  http: THTTPRestClient;
   url: string;
 begin
-  http := TIdHttp.Create(nil);
+  http := THTTPRestClient.Create(nil);
   try
     FRequest := ARestData;
     Post(AMethod, FRequest);
@@ -478,13 +482,13 @@ end;
 
 function TSuiteCRMModel.Put(AMethod, ARestData: string): String;
 var
-  http: TIdHttp;
+  http: THTTPRestClient;
   url: string;
   j: IJsonObject;
   sl: TStringList;
   a: TJsonValue;
 begin
-  http := TIdHttp.Create(nil);
+  http := THTTPRestClient.Create(nil);
   try
     FRequest := ARestData;
     Post(AMethod, FRequest);
