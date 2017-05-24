@@ -20,7 +20,9 @@ uses System.SysUtils, {$IFDEF FMX} FMX.Forms, {$ELSE} VCL.Forms, {$ENDIF}
   System.Classes,
   MVCBr.Interf,
   MVCBr.Model, MVCBr.Component,
-  System.JSON, System.JSON.Helper, MVCBr.Controller;
+  System.JSON,
+  System.JSON.Helper,
+  MVCBr.Controller;
 
 Type
 
@@ -78,9 +80,20 @@ Type
 
   TSuiteCRMContact = record
     id: string;
+    salutation: string;
     first_name: string;
     last_name: string;
+    title: string;
+    date_entered: TDateTime;
     description: string;
+    department: string;
+    email: string;
+    phone_mobile: string;
+    phone_work: string;
+    phone_other: string;
+    phone_fax: string;
+    email1: string;
+    email2: string;
   end;
 
   ISuiteCRMComum = interface
@@ -90,8 +103,12 @@ Type
     function GetCount(AWhere: string): Integer;
     function CreateID(AJson: string): string;
     function UpdateID(AID: string; AJson: string): string;
+    function DeleteID(AID: string): string;
     function Get_Entry_List(AWhere: string; AOrderBy: String;
       AOffSet: Integer = 0; ADeleted: Boolean = false): string;
+    function Get_Module_Fields: string;
+    function Get_Entry(AIds: string;
+      ASelect_Fields: string): string;
   end;
 
   ISuiteCRMUsers = interface(ISuiteCRMComum)
@@ -120,15 +137,36 @@ Type
     FCurrentID: String;
     FModuleName: string;
     FBeforeProc: TProc<IJsonObject>;
+    function CreateIDBASE(FModuleNameBase, AJson: string): string; virtual;
+    function UpdateIDBASE(FModuleNameBase, AID: string; AJson: string)
+      : string; virtual;
+    function UpdateEntriesBASE(FModuleNameBase, AID: string; AJson: string)
+      : string; virtual;
+    function SetRelationshipBASE(FModuleNameBase, FModule_ID, ALink_field_name
+      : string; AIds: string): string; virtual;
+    function GetRelationshipBASE(FModuleNameBase, AJson: String)
+      : String; virtual;
+    function DeleteIDBASE(FModuleNameBase, AID: string): String; virtual;
+    function Get_Module_FieldsBASE(FModuleNameBase: String): string;
+    function Get_EntryBASE(AModule: string; AIds: string;
+      ASelect_Fields: string): string;
   public
+    class function newGUID: string;
     function GetArrayFromString(AItems: string): TJsonArray;
     function Get(AIds: string): string; virtual;
     function GetCount(AWhere: string): Integer; virtual;
-    function Get_Entry_List(AWhere: string; AOrderBy: String;
-      AOffSet: Integer = 0; ADeleted: Boolean = false): string; virtual;
     function CurrentID: String; virtual;
+
     function CreateID(AJson: string): string; virtual;
     function UpdateID(AID: string; AJson: string): string; virtual;
+    function DeleteID(AID: string): string; virtual;
+    function Get_Entry_List(AWhere: string; AOrderBy: String;
+      AOffSet: Integer = 0; ADeleted: Boolean = false): string; virtual;
+
+    function Get_Module_Fields: string;virtual;
+    function Get_Entry(AIds: string;
+      ASelect_Fields: string): string;virtual;
+
   end;
 
   TSuiteCRMUsers = class(TSuiteCRMComum, ISuiteCRMUsers)
@@ -147,14 +185,17 @@ Type
     class function New(AModel: ISuiteCRMModel): ISuiteCRMAccounts;
     function CreateID(AJson: TSuiteCRMAccount): string; overload;
     function UpdateID(AJson: TSuiteCRMAccount): string; overload;
-
   end;
 
   TSuiteCRMContacts = class(TSuiteCRMComum, ISuiteCRMContacts)
   const
     moduleName = 'Contacts';
+  private
   public
     class function New(AModel: ISuiteCRMModel): ISuiteCRMContacts;
+    function CreateID(AJson: TSuiteCRMContact): string; overload;
+    function UpdateID(AJson: TSuiteCRMContact): string; overload;
+    function Get_Entry(AContact:TSuiteCRMContact): string;overload;
   end;
 
   TSuiteCRMProducts = class(TSuiteCRMComum, ISuiteCRMProducts)
@@ -197,10 +238,12 @@ Type
     function GetEntryPoint(AModule: string; AJson: string = '{}'): IJsonObject;
 
     //
+    function Base(AModulo: string): ISuiteCRMComum;
     function SessionID: string;
     function GetAccounts: ISuiteCRMAccounts;
     property Accounts: ISuiteCRMAccounts read GetAccounts;
     function Contacts: ISuiteCRMContacts;
+
   end;
 
   TSuiteCRMModel = class(TComponentFactory, ISuiteCRMModel,
@@ -223,12 +266,12 @@ Type
     function GetPathURL: string;
     procedure SetPassword(const Value: string);
     procedure SetUser_name(const Value: string);
-    function Login(AUserID, APasswd: string): Boolean;
     procedure SetAccounts(const Value: ISuiteCRMAccounts);
     function GetAccounts: ISuiteCRMAccounts;
     procedure SetProducts(const Value: ISuiteCRMProducts);
     function GetProducts: ISuiteCRMProducts;
   protected
+    function Login(AUserID, APasswd: string): Boolean;
   public
     Constructor Create(AOwner: TComponent); overload; override;
     Constructor Create; overload;
@@ -241,7 +284,7 @@ Type
     function GetEntryPoint(AModule: string; AJson: string = '{}'): IJsonObject;
 
     // implementaçoes REST
-    function Get_Entry_List(AModule, ASelect_fields, AWhere: string;
+    function Get_Entry_List(AModule, ASelect_Fields, AWhere: string;
       AOrderBy: String; AOffSet: Integer = 0;
       ADeleted: Boolean = false): string;
 
@@ -263,17 +306,30 @@ Type
     Function ToJson: string;
 
     function SessionID: string;
+    function Base(AModulo: string): ISuiteCRMComum;
+
     function Users: ISuiteCRMUsers;
+
     property Accounts: ISuiteCRMAccounts read GetAccounts;
     function Contacts: ISuiteCRMContacts;
-
     property Products: ISuiteCRMProducts read GetProducts;
 
   end;
 
 Implementation
 
-uses System.RTTI, System.Classes.Helper, MVCBr.HttpRestClient {idHttp}, IdHashMessageDigest;
+uses System.RTTI, System.Classes.Helper, MVCBr.HttpRestClient {idHttp} ,
+  IdHashMessageDigest;
+
+function TSuiteCRMModel.Base(AModulo: string): ISuiteCRMComum;
+var
+  o: TSuiteCRMComum;
+begin
+  o := TSuiteCRMComum.Create;
+  o.FModel := self;
+  o.FModuleName := AModulo;
+  result := o;
+end;
 
 function TSuiteCRMModel.Contacts: ISuiteCRMContacts;
 begin
@@ -292,7 +348,6 @@ begin
   FUsers := TSuiteCRMUsers.New(self);
   FAccounts := TSuiteCRMAccounts.New(self);
   FContacts := TSuiteCRMContacts.New(self);
-
   FProducts := TSuiteCRMProducts.New(self);
 end;
 
@@ -315,7 +370,7 @@ const
 function TSuiteCRMModel.Post(AResource, ARestData: string): string;
 var
   sl: TStringList;
-  http: THTTPRestClient; //TIdHttp;
+  http: THTTPRestClient; // TIdHttp;
   url: string;
 begin
   http := THTTPRestClient.Create(nil);
@@ -333,7 +388,7 @@ begin
       http.BaseURL := url;
       http.Body.Assign(sl);
       http.Execute;
-      result := http.Content ;
+      result := http.Content;
       FResponse := result;
     finally
       sl.Free;
@@ -436,7 +491,7 @@ begin
     result := result + '?' + AParams;
 end;
 
-function TSuiteCRMModel.Get_Entry_List(AModule, ASelect_fields, AWhere,
+function TSuiteCRMModel.Get_Entry_List(AModule, ASelect_Fields, AWhere,
   AOrderBy: String; AOffSet: Integer = 0; ADeleted: Boolean = false): string;
 begin
   with GetEntryPoint(AModule) do
@@ -444,12 +499,12 @@ begin
     addPair('query', AWhere);
     addPair('order_by', AOrderBy);
     addPair('offset', AOffSet.toString);
-    addPair('select_fields', ASelect_fields);
+    addPair('select_fields', ASelect_Fields);
     addPair('link_name_to_fields_array', TJsonArray.Create());
     addPair('max_results', TJSONNumber.Create(-1));
     addPair('deleted', ord(ADeleted).toString);
     addPair('favorites', TJSONFalse.Create);
-    result := Get('Get_Entry_List', ToJson);
+    result := Get('get_entry_list', ToJson);
   end;
 end;
 
@@ -508,13 +563,13 @@ var
   v: TJSONObject;
   k: TJsonPair;
 
-  function GetNewJson(tmp1: TJSONObject;AOwned:Boolean): IJsonObject;
+  function GetNewJson(tmp1: TJSONObject; AOwned: Boolean): IJsonObject;
   var
     i: Integer;
   begin
     /// convert para JSON Plano (retira tags desnecessárias)
     try
-      result := TInterfacedJSON.New(TJsonObject.create,AOwned);
+      result := TInterfacedJSON.New(TJSONObject.Create, AOwned);
       try
         for i := 0 to tmp1.count - 1 do
         begin
@@ -549,10 +604,10 @@ begin
         try
           for vv in AsArray do
           begin
-            vv.tryGetValue<TJsonValue>('name_value_list',tmp);
-            tmp1 := tmp as TJsonObject;
-            a.Add( GetNewJson(tmp1,false).JSONObject );
-          end;  
+            vv.TryGetValue<TJsonValue>('name_value_list', tmp);
+            tmp1 := tmp as TJSONObject;
+            a.Add(GetNewJson(tmp1, false).JSONObject);
+          end;
           result := a.ToJson;
         finally
           a.Free;
@@ -572,7 +627,7 @@ begin
 
   tmp1 := tmp as TJSONObject;
 
-  result := GetNewJson(tmp1,false).ToJson;
+  result := GetNewJson(tmp1, false).ToJson;
 
 end;
 
@@ -631,6 +686,7 @@ type
   TInterfacedJSONHelper = class helper for TInterfacedJSON
   public
     procedure addItem(AName: String; AValue: String);
+    function AsNameValues: IJsonObject;
   end;
 
 procedure TInterfacedJSONHelper.addItem(AName: String; AValue: String);
@@ -646,17 +702,20 @@ end;
 { TSugarCRMAccounts }
 
 function TSuiteCRMComum.CreateID(AJson: string): string;
+begin
+  result := CreateIDBASE(FModuleName, AJson);
+end;
+
+function TSuiteCRMComum.CreateIDBASE(FModuleNameBase, AJson: string): string;
 var
   v: IJsonObject;
-  j: TJSONObject;
+  j: IJsonObject;
 begin
   try
-    /// dados do item
-    v := FModel.GetEntryPoint(FModuleName);
-    j := TJSONObject.ParseJSONValue(AJson) as TJSONObject;
-    j.addPair('track_view', TJsonTrue.Create);
-    v.addPair('name_value_list', j);
-    result := FModel.Post('Set_Entry', v.ToJson);
+    v := FModel.GetEntryPoint(FModuleNameBase);
+    j := TInterfacedJSON.Create(AJson);
+    v.addPair('name_value_list', j.this.AsNameValues.JSONObject);
+    result := FModel.Post('set_entry', v.ToJson);
 
     with TInterfacedJSON.New(result) do
       if not isNull then
@@ -671,6 +730,16 @@ end;
 function TSuiteCRMComum.CurrentID: String;
 begin
   result := FCurrentID;
+end;
+
+function TSuiteCRMComum.DeleteID(AID: string): string;
+begin
+  result := DeleteIDBASE(FModuleName, AID);
+end;
+
+function TSuiteCRMComum.DeleteIDBASE(FModuleNameBase, AID: string): String;
+begin
+
 end;
 
 function TSuiteCRMComum.Get(AIds: string): string;
@@ -738,6 +807,38 @@ begin
   end;
 end;
 
+function TSuiteCRMComum.GetRelationshipBASE(FModuleNameBase,
+  AJson: String): String;
+begin
+
+end;
+
+function TSuiteCRMComum.Get_Entry(AIds,
+  ASelect_Fields: string): string;
+begin
+   result := Get_EntryBASE(FModuleName,AIds,ASelect_Fields);
+end;
+
+function TSuiteCRMComum.Get_EntryBASE(AModule: string; AIds: string;
+  ASelect_Fields: string): string;
+var
+  v: IJsonObject;
+  st: TStringList;
+begin
+  st := TStringList.New(AIds, ',');
+  try
+    v := FModel.GetEntryPoint(AModule);
+    v.addPair('ids', st.AsJsonArray);
+    st.DelimitedText := ASelect_Fields;
+    v.addPair('select_fields', st.AsJsonArray);
+
+    result := FModel.Post('get_module_fields', v.ToJson);
+
+  finally
+    st.Free;
+  end;
+end;
+
 function TSuiteCRMComum.Get_Entry_List(AWhere, AOrderBy: String;
   AOffSet: Integer = 0; ADeleted: Boolean = false): string;
 begin
@@ -745,13 +846,58 @@ begin
     AOrderBy, AOffSet, ADeleted);
 end;
 
+function TSuiteCRMComum.Get_Module_Fields: string;
+begin
+  result := Get_Module_FieldsBASE(FModuleName);
+end;
+
+function TSuiteCRMComum.Get_Module_FieldsBASE(FModuleNameBase: String): string;
+var
+  v: IJsonObject;
+  a: TJsonArray;
+begin
+  try
+    v := FModel.GetEntryPoint(FModuleNameBase);
+    a := TJsonArray.Create;
+    v.addPair('fields', a);
+    result := FModel.Post('get_module_fields', v.ToJson);
+  finally
+  end;
+end;
+
+class function TSuiteCRMComum.newGUID: string;
+begin
+  result := TGUID.newGUID.toString.Replace('{', '').Replace('}', '');
+end;
+
+function TSuiteCRMComum.SetRelationshipBASE(FModuleNameBase, FModule_ID,
+  ALink_field_name: string; AIds: string): string;
+var
+  v: IJsonObject;
+  a: TJsonArray;
+begin
+  a := TJsonArray.Create;
+  v := FModel.GetEntryPoint(FModuleNameBase);
+  v.addPair('module_id', FModule_ID);
+  v.addPair('link_field_name', ALink_field_name);
+  v.addPair('$related_ids', a);
+  result := FModel.Post('set_entry', v.ToJson);
+
+  with TInterfacedJSON.New(result) do
+    if not isNull then
+    begin
+      if Contains('id') then
+        FCurrentID := Value['id'];
+    end;
+end;
+
 type
   TJsonRecordEx<T: Record > = class(TJsonRecord<T>)
-    class function ToJsonValueList(O: T; AIgnoreEmpty: Boolean = true;
+    class function ToJsonValueList(o: T; AIgnoreEmpty: Boolean = true;
       AProc: TProc < TJSONObject >= nil): String;
   end;
 
-class function TJsonRecordEx<T>.ToJsonValueList(O: T;
+class function TJsonRecordEx<T>.ToJsonValueList(o: T;
   AIgnoreEmpty: Boolean = true; AProc: TProc < TJSONObject >= nil): String;
 var
   AContext: TRttiContext;
@@ -777,7 +923,7 @@ begin
       v := TInterfacedJSON.New;
       v.addPair('name', AFldName);
 
-      AValue := AField.GetValue(@O);
+      AValue := AField.GetValue(@o);
       try
         if AValue.IsEmpty then
         begin
@@ -844,19 +990,11 @@ end;
 
 function TSuiteCRMAccounts.CreateID(AJson: TSuiteCRMAccount): string;
 begin
-  result := inherited CreateID
-    (TJsonRecord<TSuiteCRMAccount>.ToJson { ValueList }
-    (AJson, true,
+  result := inherited CreateID(TJsonRecord<TSuiteCRMAccount>.ToJson(AJson, true,
     procedure(js: TJSONObject)
-    // var
-    // v: TJSONObject;
     begin
       if AJson.id <> '' then
       begin
-        // js.addPair('id', AJson.id);
-        // v := TJSONObject.Create as TJSONObject;
-        // v.addPair('name', 'new_with_id');
-        // v.addPair('value', TJSONTrue.Create);
         js.addPair('new_with_id', TJSONNumber.Create(1));
       end;
     end));
@@ -864,40 +1002,87 @@ end;
 
 class function TSuiteCRMAccounts.New(AModel: ISuiteCRMModel): ISuiteCRMAccounts;
 var
-  O: TSuiteCRMAccounts;
+  o: TSuiteCRMAccounts;
 begin
-  O := TSuiteCRMAccounts.Create;
-  O.FModuleName := moduleName;
-  O.FModel := AModel;
+  o := TSuiteCRMAccounts.Create;
+  o.FModuleName := moduleName;
+  o.FModel := AModel;
   // o.FSelect_fields := 'name,billing_address_state,billing_address_country';
-  result := O;
+  result := o;
 end;
 
-function TSuiteCRMComum.UpdateID(AID, AJson: string): string;
+function TSuiteCRMComum.UpdateEntriesBASE(FModuleNameBase, AID,
+  AJson: string): string;
 var
   item: IJsonObject;
   v: IJsonObject;
+  j: IJsonObject;
+  a: TJsonArray;
 begin
-  item := FModel.GetEntryPoint(FModuleName);
-  try
-    item.addPair('id', AID);
-    v := TInterfacedJSON.New(AJson);
-    item.addPair('name_value_list', v.JSONObject);
-    result := FModel.Put('Set_Entry', item.ToJson);
-  finally
-  end;
+  item := FModel.GetEntryPoint(FModuleNameBase);
+  // item.addPair('id', AID);
+  v := TInterfacedJSON.New(AJson);
+  j := v.this.AsNameValues;
+  // j.addpair('id',AID);
+
+  a := TJsonArray.Create;
+  a.Add(v.JSONObject);
+
+  item.addPair('name_value_lists', a);
+  result := FModel.Put('set_entries', item.ToJson);
+
+  with TInterfacedJSON.New(result) do
+    if not isNull then
+    begin
+      if Contains('ids') then
+      begin
+        JSONObject.TryGetValue<TJsonArray>('ids', a);
+        if a.count > 0 then
+          FCurrentID := a.Get(0).Value;
+      end;
+    end;
+
+end;
+
+function TSuiteCRMComum.UpdateID(AID, AJson: string): string;
+begin
+  result := UpdateIDBASE(FModuleName, AID, AJson);
+end;
+
+function TSuiteCRMComum.UpdateIDBASE(FModuleNameBase, AID,
+  AJson: string): string;
+var
+  item: IJsonObject;
+  v: IJsonObject;
+  j: IJsonObject;
+begin
+  item := FModel.GetEntryPoint(FModuleNameBase);
+  // item.addPair('id', AID);
+  v := TInterfacedJSON.New(AJson);
+  j := v.this.AsNameValues;
+  // j.addpair('id',AID);
+  item.addPair('name_value_list', j.JSONObject);
+  result := FModel.Put('set_entry', item.ToJson);
+
+  with TInterfacedJSON.New(result) do
+    if not isNull then
+    begin
+      if Contains('id') then
+        FCurrentID := Value['id'];
+    end;
+
 end;
 
 { TSugarCRMProducts }
 
 class function TSuiteCRMProducts.New(AModel: ISuiteCRMModel): ISuiteCRMProducts;
 var
-  O: TSuiteCRMProducts;
+  o: TSuiteCRMProducts;
 begin
-  O := TSuiteCRMProducts.Create;
-  O.FModuleName := moduleName;
-  O.FModel := AModel;
-  result := O;
+  o := TSuiteCRMProducts.Create;
+  o.FModuleName := moduleName;
+  o.FModel := AModel;
+  result := o;
 end;
 
 { TSuiteCRMAccount }
@@ -919,24 +1104,59 @@ end;
 
 class function TSuiteCRMUsers.New(AModel: ISuiteCRMModel): ISuiteCRMUsers;
 var
-  O: TSuiteCRMUsers;
+  o: TSuiteCRMUsers;
 begin
-  O := TSuiteCRMUsers.Create;
-  O.FModuleName := moduleName;
-  O.FModel := AModel;
-  result := O;
+  o := TSuiteCRMUsers.Create;
+  o.FModuleName := moduleName;
+  o.FModel := AModel;
+  result := o;
 end;
 
 { TSuiteCRMContacts }
 
+function TSuiteCRMContacts.CreateID(AJson: TSuiteCRMContact): string;
+begin
+  result := inherited CreateID(TJsonRecord<TSuiteCRMContact>.ToJson(AJson, true,
+    procedure(js: TJSONObject)
+    begin
+      if AJson.id <> '' then
+      begin
+        js.addPair('new_with_id', TJSONNumber.Create(1));
+      end;
+    end));
+end;
+
+function TSuiteCRMContacts.Get_Entry(AContact: TSuiteCRMContact): string;
+begin
+   result := Get_EntryBASE(moduleName,AContact.id, TJsonRecord<TSuiteCRMContact>.FieldNamesAsString(AContact) );
+end;
+
 class function TSuiteCRMContacts.New(AModel: ISuiteCRMModel): ISuiteCRMContacts;
 var
-  O: TSuiteCRMContacts;
+  o: TSuiteCRMContacts;
 begin
-  O := TSuiteCRMContacts.Create;
-  O.FModuleName := moduleName;
-  O.FModel := AModel;
-  result := O;
+  o := TSuiteCRMContacts.Create;
+  o.FModuleName := moduleName;
+  o.FModel := AModel;
+  result := o;
+end;
+
+function TSuiteCRMContacts.UpdateID(AJson: TSuiteCRMContact): string;
+begin
+  result := inherited UpdateID(AJson.id,
+    TJsonRecord<TSuiteCRMContact>.ToJson(AJson));
+end;
+
+function TInterfacedJSONHelper.AsNameValues: IJsonObject;
+var
+  it: TJsonPair;
+begin
+  result := TInterfacedJSON.New;
+  for it in JSONObject do
+  begin
+    result.this.addItem(it.JsonString.Value, it.JsonValue.Value);
+  end;
+
 end;
 
 Initialization

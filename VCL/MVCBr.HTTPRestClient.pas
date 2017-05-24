@@ -13,7 +13,7 @@ type
 
   THTTPRestClient = class(TComponent)
   private
-    FIdHTTP: TNetHTTPClient;
+    FHTTP: TNetHTTPClient;
     FContent: string;
     FBaseURL: string;
     FResource: string;
@@ -79,7 +79,7 @@ constructor THTTPRestClient.Create(AOwner: TComponent);
 begin
   inherited;
   FMethod := rmGET;
-  FIdHTTP := TNetHTTPClient.Create(self);
+  FHTTP := TNetHTTPClient.Create(self);
   /// workaroud   403 - Forbidden
   // FIdHTTP.Request.UserAgent :=
   // 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv: 12.0)Gecko / 20100101 Firefox / 12.0 ';
@@ -113,7 +113,7 @@ end;
 
 function THTTPRestClient.GetHTTP: TNetHTTPClient;
 begin
-  result := FIdHTTP;
+  result := FHTTP;
 end;
 
 function THTTPRestClient.Execute(AProc: TProc): boolean;
@@ -128,14 +128,17 @@ begin
     if FAcceptCharset = '' then
       FAcceptCharset := 'UTF-8';
 
-    FIdHTTP.AcceptCharset := FAcceptCharset;
-    FIdHTTP.AcceptCharset := FAcceptCharset;
-    FIdHTTP.AcceptEncoding := FAcceptEncoding;
-    FIdHTTP.Accept := FAccept;
+    FHTTP.AcceptCharset := FAcceptCharset;
+    FHTTP.AcceptCharset := FAcceptCharset;
+    FHTTP.AcceptEncoding := FAcceptEncoding;
+    FHTTP.Accept := FAccept;
 
-    FIdHTTP.ContentType := 'application/json' + '; charset=' + FAcceptCharset;
-    FIdHTTP.ResponseTimeout := FTimeout;
-    FIdHTTP.ConnectionTimeout := 60000;
+    FHTTP.ContentType := 'application/json' + '; charset=' + FAcceptCharset;
+
+  {$if CompilerVersion>=32}
+    FHTTP.ResponseTimeout := FTimeout;
+    FHTTP.ConnectionTimeout := 60000;
+  {$endif}
 
     if assigned(FBody) and (FBody.Count > 0) then
       for i := 0 to FBody.Count - 1 do
@@ -144,17 +147,17 @@ begin
 
     case FMethod of
       rmGET:
-        Response := FIdHTTP.Get(CreateURI);
+        Response := FHTTP.Get(CreateURI);
       rmPUT:
-        Response := FIdHTTP.Put(CreateURI, streamSource);
+        Response := FHTTP.Put(CreateURI, streamSource);
       rmPOST:
-        Response := FIdHTTP.Post(CreateURI, FBody);
+        Response := FHTTP.Post(CreateURI, FBody);
       rmPATCH:
-        Response := FIdHTTP.Patch(CreateURI, streamSource);
+        Response := FHTTP.Patch(CreateURI, streamSource);
       rmOPTIONS:
-        Response := FIdHTTP.Options(CreateURI);
+        Response := FHTTP.Options(CreateURI);
       rmDELETE:
-        Response := FIdHTTP.Delete(CreateURI);
+        Response := FHTTP.Delete(CreateURI);
     end;
     FResponseCode := Response.StatusCode;
     result := (Response.StatusCode >= 200) and (Response.StatusCode <= 299);

@@ -25,7 +25,7 @@ object SugarCRMSampleView: TSugarCRMSampleView
     EditLabel.Height = 13
     EditLabel.Caption = 'BaseURL'
     TabOrder = 0
-    Text = 'http://intranet1.wbagestao.com.br:8887/SuiteCRM'
+    Text = 'http://intranet1.wbagestao.com.br:8887/suiteCRM'
   end
   object LabeledEdit2: TLabeledEdit
     Left = 40
@@ -69,9 +69,9 @@ object SugarCRMSampleView: TSugarCRMSampleView
     OnClick = Button1Click
   end
   object Memo1: TMemo
-    Left = 439
+    Left = 458
     Top = 8
-    Width = 321
+    Width = 302
     Height = 266
     Lines.Strings = (
       'Memo1')
@@ -79,7 +79,7 @@ object SugarCRMSampleView: TSugarCRMSampleView
   end
   object Button2: TButton
     Left = 167
-    Top = 161
+    Top = 155
     Width = 75
     Height = 25
     Caption = 'Criar Conta'
@@ -143,6 +143,26 @@ object SugarCRMSampleView: TSugarCRMSampleView
     TitleFont.Height = -11
     TitleFont.Name = 'Tahoma'
     TitleFont.Style = []
+  end
+  object LabeledEdit5: TLabeledEdit
+    Left = 40
+    Top = 232
+    Width = 177
+    Height = 21
+    EditLabel.Width = 39
+    EditLabel.Height = 13
+    EditLabel.Caption = 'M'#243'dulos'
+    TabOrder = 13
+    Text = 'Accounts'
+  end
+  object Button7: TButton
+    Left = 218
+    Top = 228
+    Width = 178
+    Height = 25
+    Caption = 'get_module_fields'
+    TabOrder = 14
+    OnClick = Button7Click
   end
   object FDMemTable1: TFDMemTable
     FetchOptions.AssignedValues = [evMode]

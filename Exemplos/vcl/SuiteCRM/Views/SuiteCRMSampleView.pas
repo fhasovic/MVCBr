@@ -24,7 +24,7 @@ uses
   SuiteCRM.Model,
   VCL.ExtCtrls, FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Param,
   FireDAC.Stan.Error, FireDAC.DatS, FireDAC.Phys.Intf, FireDAC.DApt.Intf,
-  Data.DB, Vcl.Grids, Vcl.DBGrids, FireDAC.Comp.DataSet, FireDAC.Comp.Client,
+  Data.DB, VCL.Grids, VCL.DBGrids, FireDAC.Comp.DataSet, FireDAC.Comp.Client,
   REST.Response.Adapter, REST.FDSocial;
 
 type
@@ -54,12 +54,15 @@ type
     DBGrid1: TDBGrid;
     DataSource1: TDataSource;
     RESTSocialMemTableAdapter1: TRESTSocialMemTableAdapter;
+    LabeledEdit5: TLabeledEdit;
+    Button7: TButton;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
   private
     FInited: Boolean;
     procedure InitCRMParmas;
@@ -81,6 +84,7 @@ type
 Implementation
 
 {$R *.DFM}
+
 uses System.JSON;
 
 function TSugarCRMSampleView.UpdateView: IView;
@@ -118,12 +122,16 @@ begin
   InitCRMParmas;
   assert(FSuiteCRM.sessionID > '', 'Falta login');
 
-  r.id :=  '999';  //TGuid.NewGuid.ToString;  // nao funcionou - da erro no insert.
+  // r.id :=  '999';  //TGuid.NewGuid.ToString;  // nao funcionou - da erro no insert.
   // r.assigned_user_name := 'teste novo account';
+  r.id := Edit1.Text;
   r.name := 'teste novo account';
 
   // r.nome :=  r.name;
-  FSuiteCRM.Accounts.CreateID(r);
+  if r.id = '' then
+    FSuiteCRM.Accounts.CreateID(r)
+  else
+    FSuiteCRM.Accounts.UpdateID(r);
 
   msg(FSuiteCRM.RequestText, FSuiteCRM.ResponseText);
   Edit1.Text := FSuiteCRM.Accounts.CurrentID;
@@ -145,8 +153,9 @@ begin
 end;
 
 procedure TSugarCRMSampleView.Button5Click(Sender: TObject);
-var rst:string;
-  a:TJsonArray;
+var
+  rst: string;
+  a: TJsonArray;
 begin
   InitCRMParmas;
   FSuiteCRM.Accounts.Get_Entry_List('', '');
@@ -154,10 +163,9 @@ begin
 
   rst := FSuiteCRM.ToJson;
 
-  //TJSONObject.ParseJSONValue(rst).TryGetValue<TJsonArray>(a) ;
+  // TJSONObject.ParseJSONValue(rst).TryGetValue<TJsonArray>(a) ;
 
-  RESTSocialMemTableAdapter1.FromJson(rst); //FromJsonArray(a);
-
+  RESTSocialMemTableAdapter1.FromJson(rst); // FromJsonArray(a);
 
   Memo1.lines.add(FSuiteCRM.ToJson);
 end;
@@ -167,6 +175,17 @@ begin
   InitCRMParmas;
   FSuiteCRM.Users.get_user_id;
   msg(FSuiteCRM.RequestText, FSuiteCRM.ResponseText);
+end;
+
+procedure TSugarCRMSampleView.Button7Click(Sender: TObject);
+begin
+  InitCRMParmas;
+  with FSuiteCRM.Base(LabeledEdit5.Text) do
+  begin
+    Get_Module_Fields;
+    msg(FSuiteCRM.RequestText, FSuiteCRM.ResponseText);
+  end;
+
 end;
 
 function TSugarCRMSampleView.Controller(const aController: IController): IView;
