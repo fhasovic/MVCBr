@@ -1,3 +1,7 @@
+24/05/2017 - AL
+   * correção de bug quando execute ResolveController para o MainForm
+23/05/2017 - AL
+   * convertido o extrator de metadata para MVCBr   
 21/05/2017 - AL
    - retirado dependencia do IdHttp
    + substituido o TIdHTTP pelo  THTTPClient  (System.net);
